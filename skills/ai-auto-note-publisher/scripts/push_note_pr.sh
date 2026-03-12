@@ -60,7 +60,10 @@ if [[ ! -f "$BODY_FILE" ]]; then
   exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]]; then
+BODY_FILE_PATHSPEC="$BODY_FILE"
+BODY_FILE_PATHSPEC="${BODY_FILE_PATHSPEC#./}"
+
+if [[ -n "$(git status --porcelain --untracked-files=all -- . ":(exclude)$BODY_FILE_PATHSPEC")" ]]; then
   echo "Working tree is not clean; commit or stash changes first." >&2
   exit 1
 fi
