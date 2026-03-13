@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
   bash skills/ai-auto-note-publisher/scripts/push_note_pr.sh \
     --branch <branch-name> \
@@ -11,7 +11,12 @@ Usage:
 
 Description:
   Push current branch to origin and create a PR to current default branch using gh CLI.
-EOF
+USAGE
+}
+
+normalize_branch() {
+  local name="$1"
+  echo "${name#refs/heads/}"
 }
 
 BRANCH=""
@@ -50,6 +55,11 @@ if [[ -z "$BRANCH" || -z "$PR_TITLE" || -z "$BODY_FILE" ]]; then
   exit 1
 fi
 
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "This script must be run inside a git repository." >&2
+  exit 1
+fi
+
 if ! command -v gh >/dev/null 2>&1; then
   echo "gh CLI not found. Please install and run 'gh auth login' first." >&2
   exit 1
@@ -60,11 +70,31 @@ if [[ ! -f "$BODY_FILE" ]]; then
   exit 1
 fi
 
-BODY_FILE_PATHSPEC="$BODY_FILE"
-BODY_FILE_PATHSPEC="${BODY_FILE_PATHSPEC#./}"
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+EXPECTED_BRANCH="$(normalize_branch "$BRANCH")"
+if [[ "$CURRENT_BRANCH" != "$EXPECTED_BRANCH" ]]; then
+  echo "Current branch '$CURRENT_BRANCH' does not match --branch '$BRANCH'." >&2
+  exit 1
+fi
 
-if [[ -n "$(git status --porcelain --untracked-files=all -- . ":(exclude)$BODY_FILE_PATHSPEC")" ]]; then
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BODY_FILE_ABS="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$BODY_FILE")"
+REPO_ROOT_ABS="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$REPO_ROOT")"
+
+BODY_FILE_PATHSPEC=""
+if python3 -c 'import os,sys; root,f=sys.argv[1],sys.argv[2]; sys.exit(0 if os.path.commonpath([root,f])==root else 1)' "$REPO_ROOT_ABS" "$BODY_FILE_ABS"; then
+  BODY_FILE_PATHSPEC="$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[2], sys.argv[1]))' "$REPO_ROOT_ABS" "$BODY_FILE_ABS")"
+fi
+
+if [[ -n "$BODY_FILE_PATHSPEC" ]]; then
+  DIRTY_OUTPUT="$(git status --porcelain --untracked-files=all -- . ":(exclude)$BODY_FILE_PATHSPEC")"
+else
+  DIRTY_OUTPUT="$(git status --porcelain --untracked-files=all)"
+fi
+
+if [[ -n "$DIRTY_OUTPUT" ]]; then
   echo "Working tree is not clean; commit or stash changes first." >&2
+  echo "$DIRTY_OUTPUT" >&2
   exit 1
 fi
 
