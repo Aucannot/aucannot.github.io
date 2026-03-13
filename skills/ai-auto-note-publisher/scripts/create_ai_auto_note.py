@@ -20,6 +20,8 @@ SUBCATEGORY_KEYWORDS = {
     "deployment": ["部署", "serving", "latency", "吞吐", "inference"],
 }
 
+VALID_SUBCATEGORIES = set(SUBCATEGORY_KEYWORDS) | {"general"}
+
 WORD_LIKE_KEYWORDS = {
     "llm",
     "transformer",
@@ -97,9 +99,20 @@ def _normalize_subcategory(value: str) -> str:
     return re.sub(r"[^a-z0-9-]", "", value.lower()) or "general"
 
 
+def _validate_forced_subcategory(value: str | None, parser: argparse.ArgumentParser) -> str | None:
+    if value is None:
+        return None
+
+    normalized = _normalize_subcategory(value)
+    if normalized not in VALID_SUBCATEGORIES:
+        allowed = ", ".join(sorted(VALID_SUBCATEGORIES))
+        parser.error(f"Invalid --subcategory '{value}'. Allowed values: {allowed}")
+    return normalized
+
+
 def _collect_tags(subcategory: str, source_text: str) -> list[str]:
     tags: list[str] = [CATEGORY, subcategory]
-    lower = source_text.lower()
+    normalized_text = _normalize_text(source_text)
     topic_tags = {
         "llm": ["transformer", "token", "attention", "大模型"],
         "rag": ["retrieval", "检索", "embedding", "向量"],
@@ -113,7 +126,7 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
     for tag, markers in topic_tags.items():
         if tag == subcategory:
             continue
-        if any(_keyword_hit(lower, marker) for marker in markers):
+        if any(_keyword_hit(normalized_text, marker) for marker in markers):
             tags.append(tag)
 
     return tags[:5]
@@ -125,7 +138,7 @@ def build_post(
     date: dt.date,
     forced_subcategory: str | None = None,
 ) -> tuple[str, str]:
-    subcategory = _normalize_subcategory(forced_subcategory) if forced_subcategory else classify_subcategory(f"{title}\n{source_text}")
+    subcategory = forced_subcategory or classify_subcategory(f"{title}\n{source_text}")
     bullets = summarize_points(source_text)
     tags = _collect_tags(subcategory, source_text)
 
@@ -190,14 +203,26 @@ def main() -> None:
     args = parser.parse_args()
 
     source_path = Path(args.input)
-    source_text = source_path.read_text(encoding="utf-8")
-    date = dt.date.fromisoformat(args.date)
+    if not source_path.is_file():
+        parser.error(f"Input file not found: {source_path}")
+
+    try:
+        source_text = source_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        parser.error(f"Failed to read input file '{source_path}': {exc}")
+
+    try:
+        date = dt.date.fromisoformat(args.date)
+    except ValueError as exc:
+        parser.error(f"Invalid --date '{args.date}': {exc}")
+
+    forced_subcategory = _validate_forced_subcategory(args.subcategory, parser)
 
     subcategory, post = build_post(
         title=args.title,
         source_text=source_text,
         date=date,
-        forced_subcategory=args.subcategory,
+        forced_subcategory=forced_subcategory,
     )
 
     output_dir = Path(args.repo_root) / "_posts" / CATEGORY / subcategory
