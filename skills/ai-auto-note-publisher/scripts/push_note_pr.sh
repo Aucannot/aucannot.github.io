@@ -60,10 +60,27 @@ if [[ ! -f "$BODY_FILE" ]]; then
   exit 1
 fi
 
-BODY_FILE_PATHSPEC="$BODY_FILE"
-BODY_FILE_PATHSPEC="${BODY_FILE_PATHSPEC#./}"
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if [[ "$CURRENT_BRANCH" != "$BRANCH" ]]; then
+  echo "Current branch '$CURRENT_BRANCH' does not match --branch '$BRANCH'." >&2
+  exit 1
+fi
 
-if [[ -n "$(git status --porcelain --untracked-files=all -- . ":(exclude)$BODY_FILE_PATHSPEC")" ]]; then
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BODY_FILE_ABS="$(cd "$(dirname "$BODY_FILE")" && pwd)/$(basename "$BODY_FILE")"
+
+BODY_FILE_PATHSPEC=""
+if [[ "$BODY_FILE_ABS" == "$REPO_ROOT"/* ]]; then
+  BODY_FILE_PATHSPEC="${BODY_FILE_ABS#"$REPO_ROOT"/}"
+fi
+
+if [[ -n "$BODY_FILE_PATHSPEC" ]]; then
+  DIRTY_OUTPUT="$(git status --porcelain --untracked-files=all -- . ":(exclude)$BODY_FILE_PATHSPEC")"
+else
+  DIRTY_OUTPUT="$(git status --porcelain --untracked-files=all)"
+fi
+
+if [[ -n "$DIRTY_OUTPUT" ]]; then
   echo "Working tree is not clean; commit or stash changes first." >&2
   exit 1
 fi
