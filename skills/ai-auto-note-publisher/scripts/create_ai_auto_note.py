@@ -58,7 +58,20 @@ WORD_LIKE_KEYWORDS = {
     "todo",
 }
 
-METADATA_PREFIXES = ("title:", "title：", "paper title:", "paper title：", "论文标题:", "论文标题：", "链接:", "链接：", "link:", "link：", "arxiv:", "arxiv：")
+METADATA_PREFIXES = (
+    "title:",
+    "title：",
+    "paper title:",
+    "paper title：",
+    "论文标题:",
+    "论文标题：",
+    "链接:",
+    "链接：",
+    "link:",
+    "link：",
+    "arxiv:",
+    "arxiv：",
+)
 
 
 def slugify(text: str) -> str:
@@ -167,13 +180,23 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
     return tags[:5]
 
 
+def _extract_field_value(line: str, field: str) -> str | None:
+    pattern = rf"^\s*{re.escape(field)}\s*[:：]\s*(.+?)\s*$"
+    match = re.match(pattern, line, flags=re.IGNORECASE)
+    if match:
+        value = match.group(1).strip()
+        return value or "待补充"
+    return None
+
+
 def _extract_paper_title(source_text: str) -> str:
     lines = [ln.strip() for ln in source_text.splitlines() if ln.strip()]
-    title_prefixes = ("title:", "论文标题:", "paper title:")
+    title_fields = ("title", "paper title", "论文标题")
     for line in lines:
-        lower = line.lower()
-        if lower.startswith(title_prefixes):
-            return line.split(":", 1)[1].strip() or "待补充"
+        for field in title_fields:
+            value = _extract_field_value(line, field)
+            if value is not None:
+                return value
 
     quoted = re.search(r"[《\"]([^》\"]{8,160})[》\"]", source_text)
     if quoted:
