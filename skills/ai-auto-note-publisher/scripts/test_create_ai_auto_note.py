@@ -50,6 +50,11 @@ class AutoNoteTests(unittest.TestCase):
         self.assertNotIn("- Title: Test-Time Scaling", post)
         self.assertNotIn("- 链接：https://arxiv.org/abs/2501.12345", post.split("## 结论速记", 1)[1])
 
+
+    def test_summarize_points_keeps_explanatory_line_with_arxiv_url(self):
+        source = """我们参考了 https://arxiv.org/abs/2501.12345 并总结了关键实验结论。"""
+        points = summarize_points(source)
+        self.assertEqual(points, ["我们参考了 https://arxiv.org/abs/2501.12345 并总结了关键实验结论。"])
     def test_summarize_points_skips_metadata_lines(self):
         source = """Title: A
 链接：https://arxiv.org/abs/2501.12345

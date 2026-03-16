@@ -58,7 +58,7 @@ WORD_LIKE_KEYWORDS = {
     "todo",
 }
 
-METADATA_PREFIXES = ("title:", "paper title:", "论文标题:", "链接:", "link:")
+METADATA_PREFIXES = ("title:", "title：", "paper title:", "paper title：", "论文标题:", "论文标题：", "链接:", "链接：", "link:", "link：", "arxiv:", "arxiv：")
 
 
 def slugify(text: str) -> str:
@@ -102,9 +102,13 @@ def _is_metadata_line(line: str) -> bool:
     lower = line.strip().lower()
     if lower.startswith(METADATA_PREFIXES):
         return True
-    if re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", lower):
-        return True
-    return False
+
+    # Skip pure arXiv URL lines, but keep explanatory sentences that merely contain a URL.
+    pure_arxiv_url = re.fullmatch(
+        r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?/?",
+        lower,
+    )
+    return pure_arxiv_url is not None
 
 
 def summarize_points(content: str, max_points: int = 6) -> list[str]:
