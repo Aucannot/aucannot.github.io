@@ -177,7 +177,21 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
         if any(_keyword_hit(normalized_text, marker) for marker in markers):
             tags.append(tag)
 
-    return tags[:5]
+    # Deduplicate while preserving order.
+    deduped_tags = list(dict.fromkeys(tags))
+
+    # Add stable fallback tags to keep tags informative even on sparse inputs.
+    fallback_tags = {
+        "paper-reading": ["paper", "reading-notes"],
+        "productivity": ["learning-method", "action-items"],
+    }
+    for fallback in fallback_tags.get(subcategory, ["learning-notes"]):
+        if fallback not in deduped_tags:
+            deduped_tags.append(fallback)
+        if len(deduped_tags) >= 3:
+            break
+
+    return deduped_tags[:5]
 
 
 def _extract_field_value(line: str, field: str) -> str | None:

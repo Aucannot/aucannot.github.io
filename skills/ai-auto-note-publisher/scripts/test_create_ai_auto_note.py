@@ -59,6 +59,15 @@ class AutoNoteTests(unittest.TestCase):
         points = summarize_points(source)
         self.assertEqual(points, ["我们参考了 https://arxiv.org/abs/2501.12345 并总结了关键实验结论。"])
 
+
+    def test_build_post_includes_fallback_tags_for_sparse_input(self):
+        _, post = build_post(
+            title="简短记录",
+            source_text="仅有一行简短内容。",
+            date=dt.date(2026, 3, 16),
+            forced_subcategory="paper-reading",
+        )
+        self.assertIn('tags: ["ai-auto-note", "paper-reading", "paper"', post)
     def test_summarize_points_skips_metadata_lines(self):
         source = """Title: A
 链接：https://arxiv.org/abs/2501.12345
