@@ -11,6 +11,8 @@
 - `training`: finetune, sft, rlhf, 训练, 蒸馏
 - `evaluation`: benchmark, eval, 评测, 幻觉, hallucination
 - `deployment`: 部署, serving, latency, 吞吐, inference
+- `paper-reading`: paper, 论文, arxiv, method, 实验, ablation, baseline, sota
+- `productivity`: 复盘, 学习计划, todo, 行动项, 习惯, 时间管理
 - 默认: `general`
 
 ## 调整建议

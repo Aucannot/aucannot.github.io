@@ -56,7 +56,7 @@ python3 skills/ai-auto-note-publisher/scripts/create_ai_auto_note.py \
   --repo-root .
 ```
 
-可选：如果你要覆盖自动分类，可传 `--subcategory`（例如 `rag`、`agents`、`general`）。
+可选：如果你要覆盖自动分类，可传 `--subcategory`（例如 `rag`、`agents`、`paper-reading`、`general`）。
 
 生成并提交后，如需自动推送 PR 到本仓库（需要已安装并登录 `gh`）：
 

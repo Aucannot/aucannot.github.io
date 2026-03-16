@@ -18,6 +18,17 @@ SUBCATEGORY_KEYWORDS = {
     "training": ["finetune", "sft", "rlhf", "训练", "蒸馏"],
     "evaluation": ["benchmark", "eval", "评测", "幻觉", "hallucination"],
     "deployment": ["部署", "serving", "latency", "吞吐", "inference"],
+    "paper-reading": [
+        "paper",
+        "论文",
+        "arxiv",
+        "method",
+        "实验",
+        "ablation",
+        "baseline",
+        "sota",
+    ],
+    "productivity": ["复盘", "学习计划", "todo", "行动项", "习惯", "时间管理"],
 }
 
 VALID_SUBCATEGORIES = set(SUBCATEGORY_KEYWORDS) | {"general"}
@@ -38,6 +49,12 @@ WORD_LIKE_KEYWORDS = {
     "inference",
     "latency",
     "serving",
+    "paper",
+    "arxiv",
+    "method",
+    "ablation",
+    "baseline",
+    "sota",
 }
 
 
@@ -121,6 +138,8 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
         "evaluation": ["eval", "benchmark", "评测", "hallucination"],
         "training": ["sft", "rlhf", "finetune", "训练", "蒸馏"],
         "deployment": ["inference", "serving", "部署", "latency"],
+        "paper-reading": ["paper", "arxiv", "method", "实验", "ablation"],
+        "productivity": ["复盘", "行动项", "计划", "时间管理", "学习方法"],
     }
 
     for tag, markers in topic_tags.items():
@@ -147,9 +166,28 @@ def build_post(
         "",
         "本篇为学习对话自动沉淀的笔记，保留结论和可复用要点。",
         "",
+    ]
+
+    if subcategory == "paper-reading":
+        body.extend(
+            [
+                "## 论文信息",
+                "",
+                "- 论文标题：待补充",
+                "- 核心任务：待补充",
+                "- 主要贡献：待补充",
+                "",
+                "## 方法与实验要点",
+                "",
+            ]
+        )
+
+    body.extend(
+        [
         "## 结论速记",
         "",
-    ]
+        ]
+    )
     body.extend([f"- {point}" for point in bullets])
     body.extend(
         [
