@@ -58,6 +58,8 @@ WORD_LIKE_KEYWORDS = {
     "todo",
 }
 
+METADATA_PREFIXES = ("title:", "paper title:", "论文标题:", "链接:", "link:")
+
 
 def slugify(text: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff\s-]", "", text).strip().lower()
@@ -96,11 +98,20 @@ def classify_subcategory(text: str) -> str:
     return best if scores[best] > 0 else "general"
 
 
+def _is_metadata_line(line: str) -> bool:
+    lower = line.strip().lower()
+    if lower.startswith(METADATA_PREFIXES):
+        return True
+    if re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", lower):
+        return True
+    return False
+
+
 def summarize_points(content: str, max_points: int = 6) -> list[str]:
     lines = [ln.strip(" -\t") for ln in content.splitlines() if ln.strip()]
     points = []
     for line in lines:
-        if len(line) < 8:
+        if len(line) < 8 or _is_metadata_line(line):
             continue
         points.append(line)
         if len(points) >= max_points:
@@ -208,12 +219,10 @@ def build_post(
             ]
         )
 
-    body.extend(
-        [
-            "## 结论速记",
-            "",
-        ]
-    )
+    body.extend([
+        "## 结论速记",
+        "",
+    ])
     body.extend([f"- {point}" for point in bullets])
     body.extend(
         [
