@@ -55,6 +55,7 @@ WORD_LIKE_KEYWORDS = {
     "ablation",
     "baseline",
     "sota",
+    "todo",
 }
 
 
@@ -151,6 +152,28 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
     return tags[:5]
 
 
+def _extract_paper_title(source_text: str) -> str:
+    lines = [ln.strip() for ln in source_text.splitlines() if ln.strip()]
+    title_prefixes = ("title:", "论文标题:", "paper title:")
+    for line in lines:
+        lower = line.lower()
+        if lower.startswith(title_prefixes):
+            return line.split(":", 1)[1].strip() or "待补充"
+
+    quoted = re.search(r"[《\"]([^》\"]{8,160})[》\"]", source_text)
+    if quoted:
+        return quoted.group(1).strip()
+
+    return "待补充"
+
+
+def _extract_arxiv_link(source_text: str) -> str:
+    match = re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", source_text, re.IGNORECASE)
+    if match:
+        return match.group(0)
+    return "待补充"
+
+
 def build_post(
     title: str,
     source_text: str,
@@ -169,13 +192,16 @@ def build_post(
     ]
 
     if subcategory == "paper-reading":
+        paper_title = _extract_paper_title(source_text)
+        arxiv_link = _extract_arxiv_link(source_text)
         body.extend(
             [
                 "## 论文信息",
                 "",
-                "- 论文标题：待补充",
+                f"- 论文标题：{paper_title}",
                 "- 核心任务：待补充",
                 "- 主要贡献：待补充",
+                f"- 链接：{arxiv_link}",
                 "",
                 "## 方法与实验要点",
                 "",
@@ -184,8 +210,8 @@ def build_post(
 
     body.extend(
         [
-        "## 结论速记",
-        "",
+            "## 结论速记",
+            "",
         ]
     )
     body.extend([f"- {point}" for point in bullets])
@@ -205,7 +231,7 @@ def build_post(
             f'title: "{_yaml_escaped(title)}"',
             f"date: {date.isoformat()} 09:00:00 +0800",
             f'categories: ["{CATEGORY}", "{subcategory}"]',
-            "tags: [" + ", ".join(f'"{tag}"' for tag in tags) + "]",
+            "tags: [" + ", ".join(f'\"{tag}\"' for tag in tags) + "]",
             "---",
             "",
         ]
@@ -235,7 +261,7 @@ def main() -> None:
     parser.add_argument(
         "--subcategory",
         default=None,
-        help="Force specific subcategory (e.g. rag/agents/general)",
+        help="Force specific subcategory (e.g. rag/agents/paper-reading/general)",
     )
 
     args = parser.parse_args()

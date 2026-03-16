@@ -45,7 +45,7 @@ python3 skills/ai-auto-note-publisher/scripts/create_ai_auto_note.py \
   --repo-root .
 ```
 
-4. 检查生成内容是否符合语义；必要时微调标题与要点。
+4. 检查生成内容是否符合语义；若是论文笔记，补全“核心任务/主要贡献”等占位字段。
 5. 提交到仓库。
 6. 推送分支并自动创建 PR（需 gh CLI 已登录）。
 
@@ -56,6 +56,8 @@ python3 skills/ai-auto-note-publisher/scripts/create_ai_auto_note.py \
 如未命中关键词，默认分类为 `general`。
 
 详细映射见：`references/subcategory-rules.md`。
+
+脚本会自动从原文提取论文标题（如 `Title:` / `论文标题:` / `《...》`）与 arXiv 链接；未识别时保留“待补充”。
 
 ## 自动推送 PR 到本仓库
 

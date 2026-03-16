@@ -9,13 +9,15 @@ description: "Summarize completed AI learning conversations into publishable Jek
 
 Convert finalized learning conversations into structured, publication-ready notes under `_posts/`, with consistent metadata and stable categorization.
 
+> For repository automation and PR creation, prefer using `skills/ai-auto-note-publisher` scripts after drafting content.
+
 ## Workflow
 
 1. Confirm the source material is conclusion-ready.
 2. Extract key conclusions, evidence, and next actions.
 3. Map the note to one subcategory using `references/subcategory-taxonomy.md`.
 4. Generate a new post file from `assets/post-template.md`.
-5. Save the file to `_posts/YYYY-MM-DD-ai-auto-note-<slug>.md`.
+5. Save the file to `_posts/ai-auto-note/<subcategory>/YYYY-MM-DD-<slug>.md`.
 6. Keep `categories` in this exact order:
    - `ai-auto-note`
    - `<subcategory>`
