@@ -51,7 +51,7 @@ python3 skills/ai-auto-note-publisher/scripts/create_ai_auto_note.py \
 
 ## 子分类策略
 
-脚本会按关键词自动分类（如 `llm`、`prompting`、`rag`、`agents`、`paper-reading` 等），并优先做英文关键词边界匹配（避免 `evaluation` 误命中等情况）。
+脚本会按关键词自动分类（如 `llm`、`prompting`、`rag`、`agents`、`paper-reading`、`productivity` 等），并优先做英文关键词边界匹配（避免 `evaluation` 误命中等情况）。
 
 如未命中关键词，默认分类为 `general`。
 

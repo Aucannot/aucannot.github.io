@@ -297,7 +297,7 @@ def main() -> None:
     parser.add_argument(
         "--subcategory",
         default=None,
-        help="Force specific subcategory (e.g. rag/agents/paper-reading/general)",
+        help="Force specific subcategory (e.g. rag/agents/paper-reading/productivity/general)",
     )
 
     args = parser.parse_args()
