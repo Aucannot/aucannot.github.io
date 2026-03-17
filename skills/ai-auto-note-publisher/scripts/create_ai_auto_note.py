@@ -18,6 +18,17 @@ SUBCATEGORY_KEYWORDS = {
     "training": ["finetune", "sft", "rlhf", "训练", "蒸馏"],
     "evaluation": ["benchmark", "eval", "评测", "幻觉", "hallucination"],
     "deployment": ["部署", "serving", "latency", "吞吐", "inference"],
+    "paper-reading": [
+        "paper",
+        "论文",
+        "arxiv",
+        "method",
+        "实验",
+        "ablation",
+        "baseline",
+        "sota",
+    ],
+    "productivity": ["复盘", "学习计划", "todo", "行动项", "习惯", "时间管理"],
 }
 
 VALID_SUBCATEGORIES = set(SUBCATEGORY_KEYWORDS) | {"general"}
@@ -38,7 +49,29 @@ WORD_LIKE_KEYWORDS = {
     "inference",
     "latency",
     "serving",
+    "paper",
+    "arxiv",
+    "method",
+    "ablation",
+    "baseline",
+    "sota",
+    "todo",
 }
+
+METADATA_PREFIXES = (
+    "title:",
+    "title：",
+    "paper title:",
+    "paper title：",
+    "论文标题:",
+    "论文标题：",
+    "链接:",
+    "链接：",
+    "link:",
+    "link：",
+    "arxiv:",
+    "arxiv：",
+)
 
 
 def slugify(text: str) -> str:
@@ -78,11 +111,24 @@ def classify_subcategory(text: str) -> str:
     return best if scores[best] > 0 else "general"
 
 
+def _is_metadata_line(line: str) -> bool:
+    lower = line.strip().lower()
+    if lower.startswith(METADATA_PREFIXES):
+        return True
+
+    # Skip pure arXiv URL lines, but keep explanatory sentences that merely contain a URL.
+    pure_arxiv_url = re.fullmatch(
+        r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?/?",
+        lower,
+    )
+    return pure_arxiv_url is not None
+
+
 def summarize_points(content: str, max_points: int = 6) -> list[str]:
     lines = [ln.strip(" -\t") for ln in content.splitlines() if ln.strip()]
     points = []
     for line in lines:
-        if len(line) < 8:
+        if len(line) < 8 or _is_metadata_line(line):
             continue
         points.append(line)
         if len(points) >= max_points:
@@ -121,6 +167,8 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
         "evaluation": ["eval", "benchmark", "评测", "hallucination"],
         "training": ["sft", "rlhf", "finetune", "训练", "蒸馏"],
         "deployment": ["inference", "serving", "部署", "latency"],
+        "paper-reading": ["paper", "arxiv", "method", "实验", "ablation"],
+        "productivity": ["复盘", "行动项", "计划", "时间管理", "学习方法"],
     }
 
     for tag, markers in topic_tags.items():
@@ -129,7 +177,58 @@ def _collect_tags(subcategory: str, source_text: str) -> list[str]:
         if any(_keyword_hit(normalized_text, marker) for marker in markers):
             tags.append(tag)
 
-    return tags[:5]
+    # Deduplicate while preserving order.
+    deduped_tags = list(dict.fromkeys(tags))
+
+    # Add stable fallback tags to keep tags informative even on sparse inputs.
+    fallback_tags = {
+        "paper-reading": ["paper", "reading-notes"],
+        "productivity": ["learning-method", "action-items"],
+    }
+    for fallback in fallback_tags.get(subcategory, ["learning-notes"]):
+        if fallback not in deduped_tags:
+            deduped_tags.append(fallback)
+        if len(deduped_tags) >= 3:
+            break
+
+    return deduped_tags[:5]
+
+
+def _extract_field_value(line: str, field: str) -> str | None:
+    pattern = rf"^\s*{re.escape(field)}\s*[:：]\s*(.+?)\s*$"
+    match = re.match(pattern, line, flags=re.IGNORECASE)
+    if match:
+        value = match.group(1).strip()
+        return value or "待补充"
+    return None
+
+
+def _extract_paper_title(source_text: str) -> str:
+    lines = [ln.strip() for ln in source_text.splitlines() if ln.strip()]
+    title_fields = ("title", "paper title", "论文标题")
+    for line in lines:
+        for field in title_fields:
+            value = _extract_field_value(line, field)
+            if value is not None:
+                return value
+
+    quoted = re.search(r"[《\"]([^》\"]{8,160})[》\"]", source_text)
+    if quoted:
+        return quoted.group(1).strip()
+
+    return "待补充"
+
+
+def _extract_arxiv_link(source_text: str) -> str:
+    url_match = re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", source_text, re.IGNORECASE)
+    if url_match:
+        return url_match.group(0)
+
+    id_match = re.search(r"arxiv\s*[:：]\s*(\d{4}\.\d{4,5}(?:v\d+)?)", source_text, re.IGNORECASE)
+    if id_match:
+        return f"https://arxiv.org/abs/{id_match.group(1)}"
+
+    return "待补充"
 
 
 def build_post(
@@ -147,9 +246,29 @@ def build_post(
         "",
         "本篇为学习对话自动沉淀的笔记，保留结论和可复用要点。",
         "",
+    ]
+
+    if subcategory == "paper-reading":
+        paper_title = _extract_paper_title(source_text)
+        arxiv_link = _extract_arxiv_link(source_text)
+        body.extend(
+            [
+                "## 论文信息",
+                "",
+                f"- 论文标题：{paper_title}",
+                "- 核心任务：待补充",
+                "- 主要贡献：待补充",
+                f"- 链接：{arxiv_link}",
+                "",
+                "## 方法与实验要点",
+                "",
+            ]
+        )
+
+    body.extend([
         "## 结论速记",
         "",
-    ]
+    ])
     body.extend([f"- {point}" for point in bullets])
     body.extend(
         [
@@ -167,7 +286,7 @@ def build_post(
             f'title: "{_yaml_escaped(title)}"',
             f"date: {date.isoformat()} 09:00:00 +0800",
             f'categories: ["{CATEGORY}", "{subcategory}"]',
-            "tags: [" + ", ".join(f'"{tag}"' for tag in tags) + "]",
+            "tags: [" + ", ".join(f'\"{tag}\"' for tag in tags) + "]",
             "---",
             "",
         ]
@@ -197,7 +316,7 @@ def main() -> None:
     parser.add_argument(
         "--subcategory",
         default=None,
-        help="Force specific subcategory (e.g. rag/agents/general)",
+        help="Force specific subcategory (e.g. rag/agents/paper-reading/productivity/general)",
     )
 
     args = parser.parse_args()
