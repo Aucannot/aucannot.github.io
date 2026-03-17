@@ -31,6 +31,11 @@ class AutoNoteTests(unittest.TestCase):
         self.assertEqual(_extract_paper_title(text), "Test-Time Scaling")
         self.assertEqual(_extract_arxiv_link(text), "https://arxiv.org/abs/2501.12345")
 
+
+    def test_extract_arxiv_id_format(self):
+        text = "该论文编号 arXiv:2501.12345v2"
+        self.assertEqual(_extract_arxiv_link(text), "https://arxiv.org/abs/2501.12345v2")
+
     def test_extract_paper_title_with_fullwidth_colon(self):
         text = "论文标题：使用 CoT 增强推理能力"
         self.assertEqual(_extract_paper_title(text), "使用 CoT 增强推理能力")

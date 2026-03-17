@@ -220,9 +220,14 @@ def _extract_paper_title(source_text: str) -> str:
 
 
 def _extract_arxiv_link(source_text: str) -> str:
-    match = re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", source_text, re.IGNORECASE)
-    if match:
-        return match.group(0)
+    url_match = re.search(r"https?://arxiv\.org/(?:abs|pdf)/\d{4}\.\d{4,5}(?:v\d+)?", source_text, re.IGNORECASE)
+    if url_match:
+        return url_match.group(0)
+
+    id_match = re.search(r"arxiv\s*[:：]\s*(\d{4}\.\d{4,5}(?:v\d+)?)", source_text, re.IGNORECASE)
+    if id_match:
+        return f"https://arxiv.org/abs/{id_match.group(1)}"
+
     return "待补充"
 
 
