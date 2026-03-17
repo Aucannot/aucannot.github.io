@@ -57,7 +57,9 @@ python3 skills/ai-auto-note-publisher/scripts/create_ai_auto_note.py \
 
 详细映射见：`references/subcategory-rules.md`。
 
-脚本会自动从原文提取论文标题（如 `Title:` / `论文标题:` / `《...》`）与 arXiv 链接；未识别时保留“待补充”。
+标签策略：脚本会去重并在输入稀疏时补充稳定兜底标签（如 `paper`、`reading-notes`）。
+
+脚本会自动从原文提取论文标题（如 `Title:` / `论文标题:` / `《...》`）与 arXiv 链接（支持 `https://arxiv.org/...` 和 `arXiv:2501.12345`）；未识别时保留“待补充”。
 
 ## 自动推送 PR 到本仓库
 
