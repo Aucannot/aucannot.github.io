@@ -1,6 +1,8 @@
 ---
 name: ai-auto-note-publisher
-description: 自动把学习对话沉淀成博客笔记并提交到当前仓库。当用户提到“学习总结/自动归档/上传笔记/ai auto note/论文共读/论文总结”时使用。统一写入 categories: ["ai-auto-note", "<auto-subcategory>"]，并按子目录自动归类。
+description: >-
+  自动把学习对话沉淀成博客笔记并提交到当前仓库。当用户提到“学习总结/自动归档/上传笔记/ai auto
+  note/论文共读/论文总结”时使用。统一写入 categories: ["ai-auto-note", "<auto-subcategory>"]，并按子目录自动归类。
 ---
 
 # AI Auto Note Publisher
