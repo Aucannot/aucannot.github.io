@@ -29,6 +29,25 @@ latest version of the **Chirpy** theme and the [CD][CD] workflow to here, so tha
 
 Check out the [theme's docs](https://github.com/cotes2020/jekyll-theme-chirpy/wiki).
 
+## Local Development
+
+This site uses `jekyll-theme-chirpy ~> 7.2`, which requires Ruby 3.1 or newer.
+The GitHub Pages workflow in this repository builds with Ruby 3.3.
+
+On macOS, a straightforward setup is:
+
+```bash
+brew install ruby@3.3
+export PATH="/opt/homebrew/opt/ruby@3.3/bin:$PATH"
+bash serve.sh
+```
+
+If `bundle` is still unavailable after switching Ruby, run:
+
+```bash
+gem install bundler
+```
+
 ## Skill 安装与使用（AI Auto Note）
 
 仓库内置了一个用于自动沉淀学习笔记的 skill：`skills/ai-auto-note-publisher`。
