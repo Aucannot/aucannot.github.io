@@ -11,6 +11,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+MIN_RUBY_VERSION='3.1.0'
+RECOMMENDED_RUBY_SERIES='3.3'
 
 # Function to print colored output
 print_info() {
@@ -29,13 +31,58 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Compare semantic versions using RubyGems' version parser.
+version_gte() {
+    ruby -e 'exit(Gem::Version.new(ARGV[0]) >= Gem::Version.new(ARGV[1]) ? 0 : 1)' "$1" "$2"
+}
+
+check_ruby() {
+    if ! command -v ruby &> /dev/null; then
+        print_error "ruby command not found!"
+        print_info "This site requires Ruby ${MIN_RUBY_VERSION}+"
+        exit 1
+    fi
+
+    local current_ruby_version
+    current_ruby_version="$(ruby -e 'print RUBY_VERSION')"
+
+    if version_gte "$current_ruby_version" "$MIN_RUBY_VERSION"; then
+        print_success "Ruby ${current_ruby_version} is compatible"
+        return
+    fi
+
+    local candidate
+    for candidate in \
+        /opt/homebrew/opt/ruby@3.4/bin \
+        /opt/homebrew/opt/ruby@3.3/bin \
+        /opt/homebrew/opt/ruby@3.2/bin \
+        /opt/homebrew/opt/ruby@3.1/bin; do
+        if [ -x "${candidate}/ruby" ]; then
+            export PATH="${candidate}:$PATH"
+            current_ruby_version="$(ruby -e 'print RUBY_VERSION')"
+            break
+        fi
+    done
+
+    if version_gte "$current_ruby_version" "$MIN_RUBY_VERSION"; then
+        print_success "Using compatible Ruby ${current_ruby_version}"
+        return
+    fi
+
+    print_error "Ruby ${current_ruby_version} is too old for jekyll-theme-chirpy 7.2.x"
+    print_info "GitHub Actions builds this site with Ruby ${RECOMMENDED_RUBY_SERIES}"
+    print_info "On macOS with Homebrew, install a newer Ruby with:"
+    print_info "  brew install ruby@${RECOMMENDED_RUBY_SERIES}"
+    print_info "  export PATH=\"/opt/homebrew/opt/ruby@${RECOMMENDED_RUBY_SERIES}/bin:\$PATH\""
+    exit 1
+}
+
 # Check if bundle command is available
 check_bundle() {
     if ! command -v bundle &> /dev/null; then
         print_error "bundle command not found!"
-        print_info "Please install Ruby and Bundler:"
-        print_info "  - Install Ruby: https://www.ruby-lang.org/en/documentation/installation/"
-        print_info "  - Install Bundler: gem install bundler"
+        print_info "Please install Bundler for the active Ruby:"
+        print_info "  gem install bundler"
         exit 1
     fi
     print_success "Bundler is installed"
@@ -54,6 +101,7 @@ check_gemfile() {
 # Install dependencies
 install_dependencies() {
     print_info "Installing dependencies..."
+    bundle config set --local path 'vendor/bundle'
     bundle install
     print_success "Dependencies installed successfully"
 }
@@ -89,6 +137,7 @@ main() {
     echo
 
     # Run checks and setup
+    check_ruby
     check_bundle
     check_gemfile
     install_dependencies

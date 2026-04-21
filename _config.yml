@@ -206,6 +206,7 @@ exclude:
   - "*.gemspec"
   - docs
   - tools
+  - grad-prep
   - README.md
   - LICENSE
   - purgecss.js
